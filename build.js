@@ -14,6 +14,7 @@ const HEADER = `<a class="skip" href="#main">Skip to content</a>
 <a class="brand" href="/" aria-label="Crenosoft home"><img src="/logo.png" alt="Crenosoft" width="199" height="38"></a>
 <button class="menu-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
 <ul class="nav-links" id="nav-links">
+<li><a href="/ai-employees/">AI Employees</a></li>
 <li><a href="/#services">Services</a></li>
 <li><a href="/#industries">Industries</a></li>
 <li><a href="/#assessment">AI Tools</a></li>

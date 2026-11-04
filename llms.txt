@@ -2,6 +2,9 @@
 
 > Crenosoft is an AI agency based in Melbourne, Victoria, serving businesses across Australia. It designs, builds and runs AI agents, AI receptionists, chatbots, workflow automation and custom AI software. Projects start with a free 30-minute AI audit, are quoted at a fixed price in AUD, and are designed around the Privacy Act 1988 and the Australian Privacy Principles.
 
+## What makes Crenosoft different
+- [Human-backed AI Employees](https://www.crenosoft.com/ai-employees/): custom AI employees for calls, inbox, invoices, leads and admin, run by a dedicated Crenosoft review team that checks every exception 24/7, with an hours-saved guarantee.
+
 ## Services
 - [AI Consulting](https://www.crenosoft.com/ai-consulting/): AI strategy and roadmaps, AI readiness assessments, generative AI consulting and AI training for teams.
 - [AI Automation](https://www.crenosoft.com/ai-automation/): business process automation, n8n/Make/Zapier workflows, CRM automation and document processing.
