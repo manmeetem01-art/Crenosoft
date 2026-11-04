@@ -55,6 +55,8 @@ const FOOTER = `<footer>
 <li><a href="/pricing/">Pricing</a></li>
 <li><a href="/insights/">Blog</a></li>
 <li><a href="/privacy/">Privacy Policy</a></li>
+<li><a href="/ai-policy/">AI Policy</a></li>
+<li><a href="/terms/">Terms of Use</a></li>
 <li><a href="#contact">Contact</a></li>
 </ul></div>
 </div>
@@ -194,6 +196,77 @@ ${FOOTER}
 </html>
 `;
 }
+function schemaPlain(p) {
+  const url = DOMAIN + p.path;
+  const crumbs = [["Home", "/"]].concat(p.crumbs || []).map(([n, u], i) => ({"@type": "ListItem", position: i + 1, name: n, item: DOMAIN + u}));
+  const page = {"@type": p.page_type || "WebPage", "@id": url + "#webpage", url, name: p.title, description: p.desc, inLanguage: "en-AU",
+    isPartOf: {"@id": DOMAIN + "/#website"}, about: {"@id": DOMAIN + "/#org"}, breadcrumb: {"@id": url + "#breadcrumb"}};
+  if (p.updated) page.dateModified = p.updated;
+  const graph = [page, {"@type": "BreadcrumbList", "@id": url + "#breadcrumb", itemListElement: crumbs}];
+  if (p.faqs && p.faqs.length) graph.push({"@type": "FAQPage", "@id": url + "#faq", mainEntity: p.faqs.map(([q, a]) => ({"@type": "Question", name: q, acceptedAnswer: {"@type": "Answer", text: strip(a)}}))});
+  return JSON.stringify({"@context": "https://schema.org", "@graph": graph});
+}
+function renderPlain(p) {
+  let body = p.body.replace(/<h2>([\s\S]*?)<\/h2>/g, (m, t) => `<h2 id="${slug(t)}">${t}</h2>`);
+  const crumbs = (p.crumbs && p.crumbs.length) ? '<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li>' +
+    p.crumbs.map(([n, u], i) => i < p.crumbs.length - 1 ? `<li><a href="${u}">${n}</a></li>` : `<li aria-current="page">${n}</li>`).join("") + "</ol></nav>" : "";
+  const faqs = (p.faqs && p.faqs.length) ? '<h2 id="faq">Frequently asked questions</h2><div class="faq" style="margin:0">' + p.faqs.map(([q, a], i) => `<details${i ? "" : " open"}><summary>${q}</summary><p class="faq-answer">${a}</p></details>`).join("") + "</div>" : "";
+  const canon = p.file ? "" : `<link rel="canonical" href="${DOMAIN}${p.path}">\n`;
+  return `<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>${esc(p.title)}</title>
+<meta name="description" content="${esc(p.desc)}">
+${canon}<meta name="robots" content="${p.noindex ? "noindex, follow" : "index, follow, max-image-preview:large, max-snippet:-1"}">
+<meta name="theme-color" content="#F07336">
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_AU">
+<meta property="og:site_name" content="Crenosoft">
+<meta property="og:title" content="${esc(p.title)}">
+<meta property="og:description" content="${esc(p.desc)}">
+<meta property="og:url" content="${DOMAIN}${p.path}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<script type="application/ld+json">${schemaPlain(p)}</script>
+</head>
+<body>
+${HEADER}
+<main id="main">
+<section class="page-hero" aria-labelledby="page-title">
+<div class="wrap">
+${crumbs}
+${p.pill ? `<span class="pill"><i aria-hidden="true"></i>${p.pill}</span>` : ""}
+<h1 id="page-title">${p.h1}</h1>
+<p class="lead">${p.lead}</p>
+${p.updated ? `<p style="color:var(--ink-2);font-size:.92rem;margin:0">Last updated: ${p.updated_label || p.updated}</p>` : ""}
+${p.hero_cta ? `<div class="hero-ctas" style="margin-top:22px">${p.hero_cta}</div>` : ""}
+</div>
+</section>
+<section class="content" aria-label="Page content">
+<div class="wrap content-grid">
+<article class="prose">
+${body}
+${faqs}
+</article>
+<div class="aside">
+<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol id="toc-list"></ol></nav>
+<div class="aside-cta"><h2>Free 30-minute AI audit</h2><p>We map your workflows and show where AI pays back first.</p><a class="btn btn-primary" href="/contact/">Book my audit</a></div>
+</div>
+</div>
+</section>
+${p.contact ? contact(p.cta_h || "Ready to talk?", p.cta_p || "Free 30-minute AI audit. We look at your workflows and tell you honestly where AI will and won’t pay off.") : ""}
+</main>
+${FOOTER}
+<script src="/site.js" defer></script>
+</body>
+</html>
+`;
+}
 fs.rmSync(OUT, {recursive: true, force: true});
 fs.mkdirSync(OUT, {recursive: true});
 const SKIP = /^(build\.js|content-.*\.json|package\.json|vercel\.json|README\.md|dist|node_modules|\..*)$/;
@@ -208,10 +281,12 @@ for (const f of fs.readdirSync(ROOT).filter(f => /^content-.*\.json$/.test(f)).s
   const p = JSON.parse(fs.readFileSync(path.join(ROOT, f), "utf8"));
   const o = OVR[p.path];
   if (o) { if (o.body_append) p.body += o.body_append; Object.keys(o).forEach(k => { if (k !== "body_append") p[k] = o[k]; }); }
+  const html = p.layout === "plain" ? renderPlain(p) : render(p);
+  if (p.file) { fs.writeFileSync(path.join(OUT, p.file), html); built++; continue; }
   const dir = path.join(OUT, p.path.replace(/^\/|\/$/g, ""));
   fs.mkdirSync(dir, {recursive: true});
-  fs.writeFileSync(path.join(dir, "index.html"), render(p));
-  if (!urls.includes(p.path)) urls.push(p.path);
+  fs.writeFileSync(path.join(dir, "index.html"), html);
+  if (!p.noindex && !urls.includes(p.path)) urls.push(p.path);
   built++;
 }
 const today = new Date().toISOString().slice(0, 10);
